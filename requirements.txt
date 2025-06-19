@@ -1,0 +1,5 @@
+requests
+instabot
+newspaper3k
+Beautifulsoup4
+pandas
