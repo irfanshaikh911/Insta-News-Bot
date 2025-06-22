@@ -2,3 +2,4 @@ config/
 myenv/
 Old data/
 data/
+__pycache__/
