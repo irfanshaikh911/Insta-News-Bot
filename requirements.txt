@@ -4,6 +4,7 @@ Beautifulsoup4
 pandas
 transformers
 html2image
+sumy
 # sentencepiece
 # tensorflow
 # torch==2.2.2

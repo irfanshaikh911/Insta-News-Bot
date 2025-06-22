@@ -10,4 +10,5 @@ def create_html_post(headline):
     """
     hti = Html2Image()
     hti.screenshot(html_str=html, save_as='news_card.png', size=(1080, 1080))
-    
+  
+create_html_post("After US Strikes, Iran Plans To Close Oil Corridor Strait Of Hormuz: Report")

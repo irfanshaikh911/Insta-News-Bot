@@ -13,8 +13,8 @@ def check_authorization(url,querystring, headers):
 
 import pandas as pd
 
-def get_all_tech_news(data):
-    df = pd.DataFrame(data['items'])[['title', 'snippet', 'images', 'subnews', 'hasSubnews', 'newsUrl', 'publisher']]
+def get_all_tech_news(df):
+    # df = pd.DataFrame(data['items'])[['title', 'snippet', 'images', 'subnews', 'hasSubnews', 'newsUrl', 'publisher']]
     df.rename(columns={
         'snippet': 'description',
         'newsUrl': 'url',
