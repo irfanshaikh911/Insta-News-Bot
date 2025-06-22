@@ -1,5 +1,9 @@
 requests
 instabot
-newspaper3k
 Beautifulsoup4
 pandas
+transformers
+html2image
+# sentencepiece
+# tensorflow
+# torch==2.2.2
