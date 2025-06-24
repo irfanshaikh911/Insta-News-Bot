@@ -65,6 +65,3 @@ class InstaBotWrapper:
         except Exception as e:
             print(f"❌ Upload failed: {e}")
             return False
-
-    def logout(self):
-        self.client.logout()
