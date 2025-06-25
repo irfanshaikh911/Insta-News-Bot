@@ -104,7 +104,7 @@ with tab2:
             with open("insta_config.txt", "w", encoding="utf-8") as f:
                 f.write(f"{username}\n{password}\n{caption}")
 
-            # Rename image for Instabot
+            # # Rename image for Instabot
             if os.path.exists("news_card.png"):
                 if not os.path.exists("news_card.png.REMOVE_ME"):
                     os.rename("news_card.png", "news_card.png.REMOVE_ME")
