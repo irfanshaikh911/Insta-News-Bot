@@ -1,26 +1,41 @@
-// src/components/NewsCard.tsx
 import React from "react";
 
-interface NewsCardProps {
+interface NewsProps {
   title: string;
   summary: string;
   imageUrl: string;
   readMoreUrl: string;
 }
 
-const NewsCard: React.FC<NewsCardProps> = ({ title, summary, imageUrl, readMoreUrl }) => {
-  return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col w-full sm:w-80 md:w-96 transition-transform hover:scale-105">
-      <img src={imageUrl} alt={title} className="w-full h-48 object-cover" />
+const NewsCard: React.FC<NewsProps> = ({
+  title,
+  summary,
+  imageUrl,
+  readMoreUrl,
+}) => {
+  const defaultImage = "/no-image.jpg"; // ✅ Ensure this image exists in the public folder
 
-      <div className="p-4 flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-gray-800 line-clamp-2">{title}</h2>
-        <p className="text-sm text-gray-600 line-clamp-3">{summary}</p>
+  const validImage = imageUrl?.trim() ? imageUrl : defaultImage;
+
+  return (
+    <div className="max-w-sm rounded overflow-hidden shadow-md bg-white">
+      <img
+        className="w-full h-48 object-cover"
+        src={validImage}
+        alt={title}
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = defaultImage;
+        }}
+      />
+      <div className="px-6 py-4">
+        <h2 className="font-bold text-lg mb-2">{title}</h2>
+        <p className="text-gray-700 text-sm">{summary}</p>
         <a
           href={readMoreUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-block bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-800 text-sm w-fit"
+          className="inline-block mt-4 px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
         >
           Read More
         </a>

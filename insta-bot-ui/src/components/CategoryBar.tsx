@@ -2,42 +2,30 @@ import React from "react";
 
 interface CategoryBarProps {
   selectedCategory: string;
-  onSelect: (category: string) => void;
+  onSelectCategory: (category: string) => void;
 }
 
-const categories = [
-  "India",
-  "World",
-  "Movies",
-  "Sport",
-  "Data",
-  "Health",
-  "Opinion",
-  "Science",
-  "Business",
-];
+const categories = ["All", "India", "World", "Movies", "Sports", "Technology", "Health"];
 
 const CategoryBar: React.FC<CategoryBarProps> = ({
   selectedCategory,
-  onSelect,
+  onSelectCategory,
 }) => {
   return (
-    <div className="bg-white/10 backdrop-blur-md text-black px-6 py-2 overflow-x-auto whitespace-nowrap border-t border-b border-gray-300">
-      <div className="flex space-x-6 justify-center min-w-max">
-        {categories.map((category, index) => (
-          <button
-            key={index}
-            onClick={() => onSelect(category)}
-            className={`text-base font-medium transition-colors ${
-              selectedCategory === category
-                ? "text-purple-700 border-b-2 border-purple-700"
-                : "hover:text-purple-500"
-            }`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
+    <div className="flex justify-center gap-4 bg-white py-3 border-b border-gray-200">
+      {categories.map((category) => (
+        <button
+          key={category}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+            selectedCategory === category
+              ? "bg-purple-700 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-purple-200"
+          }`}
+          onClick={() => onSelectCategory(category)}
+        >
+          {category}
+        </button>
+      ))}
     </div>
   );
 };

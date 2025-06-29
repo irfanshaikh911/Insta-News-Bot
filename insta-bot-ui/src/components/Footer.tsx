@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
             className="w-42 h-24 mb-4"
           />
           <div className="flex space-x-6">
-            <a href="#" className="htext-purple-400">
+            <a href="#" className="text-purple-400">
               <FaFacebookF className="text-3xl"/>
             </a>
             <a href="#" className="text-purple-400">

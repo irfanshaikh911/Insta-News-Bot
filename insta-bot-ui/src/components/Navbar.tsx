@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { FaUserCircle, FaFacebookF, FaTwitter, FaInstagram, FaWhatsapp } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaWhatsapp,
+} from "react-icons/fa";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -22,10 +28,10 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         if (data?.city && data?.country_name) {
           setLocation(`${data.city}, ${data.country_name}`);
         } else {
-          setLocation("India");
+          setLocation("Pune, India");
         }
       })
-      .catch(() => setLocation("India"));
+      .catch(() => setLocation("Pune, India"));
   }, []);
 
   return (
@@ -36,7 +42,6 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           <span className="text-base font-semibold">{today}</span>
           <span className="text-sm text-gray-700">📍 {location}</span>
         </div>
-
 
         {/* Center: Logo */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
@@ -56,7 +61,6 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           </button>
 
           {/* Social Icons */}
-
 
           {/* Search */}
           <div className="flex items-center space-x-2">
