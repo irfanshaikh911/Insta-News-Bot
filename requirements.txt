@@ -5,6 +5,7 @@ pandas
 transformers
 html2image
 sumy
+feedparser
 # sentencepiece
 # tensorflow
 # torch==2.2.2

@@ -24,10 +24,10 @@ if "image_ready" not in st.session_state:
 # -----------------------
 with tab1:
     st.subheader("Select Tech News to Generate Insta Post")
-
     data = pd.read_csv("data/google_news_technology.csv")
     news_df = get_all_tech_news(data)
 
+        
     if "headlines" not in st.session_state:
         st.session_state.headlines = news_df['title'].tolist()
 
