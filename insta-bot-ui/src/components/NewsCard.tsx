@@ -1,3 +1,4 @@
+// NewsCard.tsx
 import React from "react";
 
 interface NewsProps {
@@ -13,7 +14,7 @@ const NewsCard: React.FC<NewsProps> = ({
   imageUrl,
   readMoreUrl,
 }) => {
-  const defaultImage = "/no-image.jpg"; // ✅ Ensure this image exists in the public folder
+  const defaultImage = "/no-image.jpg"; // ✅ Make sure it's in /public
 
   const validImage = imageUrl?.trim() ? imageUrl : defaultImage;
 

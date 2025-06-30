@@ -1,6 +1,7 @@
+// App.tsx
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
 import NewsCard from "./components/NewsCard";
 import Footer from "./components/Footer";
 import CategoryBar from "./components/CategoryBar";
@@ -13,15 +14,30 @@ interface NewsItem {
   publisher: string;
   image: string;
   category: string;
+  full_story: string;
 }
 
 const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
+  const [shuffledNews, setShuffledNews] = useState<NewsItem[]>([]);
   const [filteredCategory, setFilteredCategory] = useState<string>("All");
-  const [visibleCount, setVisibleCount] = useState<number>(9); // Show 9 initially
+  const [visibleCount, setVisibleCount] = useState<number>(9);
 
-  const defaultImage = "/no-image.png"; // Ensure this image exists in /public
+  const defaultImage = "/no-image.jpg";
+
+  const shuffleArrayWithImagePriority = (array: NewsItem[]) => {
+    const withImage = array.filter((item) => item.image?.trim());
+    const withoutImage = array.filter((item) => !item.image?.trim());
+
+    const shuffle = (arr: NewsItem[]) =>
+      arr
+        .map((value) => ({ value, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ value }) => value);
+
+    return [...shuffle(withImage), ...shuffle(withoutImage)];
+  };
 
   useEffect(() => {
     fetch("/news_feed.csv")
@@ -31,7 +47,12 @@ const App: React.FC = () => {
           header: true,
           skipEmptyLines: true,
         });
-        setNewsData(parsed.data);
+
+        const data = parsed.data;
+        setNewsData(data);
+
+        const shuffled = shuffleArrayWithImagePriority([...data]);
+        setShuffledNews(shuffled);
       })
       .catch((err) => {
         console.error("Error loading news data:", err);
@@ -44,22 +65,17 @@ const App: React.FC = () => {
 
   const filteredNews =
     filteredCategory === "All"
-      ? newsData
+      ? shuffledNews
       : newsData.filter((item) => item.category === filteredCategory);
 
   return (
     <div className="flex min-h-screen bg-gray-100 transition-all duration-300">
-      {/* Sidebar */}
-      {sidebarOpen && <Sidebar />}
-
-      {/* Main content */}
       <div
         className={`flex flex-col flex-1 transition-all duration-300 ${
           sidebarOpen ? "ml-64" : ""
         }`}
       >
         <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
         <CategoryBar
           selectedCategory={filteredCategory}
           onSelectCategory={setFilteredCategory}
@@ -73,13 +89,18 @@ const App: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-8">
             {filteredNews.length > 0 ? (
               filteredNews.slice(0, visibleCount).map((news, index) => (
-                <NewsCard
-                  key={index}
-                  title={news.title}
-                  summary={news.summary}
-                  imageUrl={news.image || defaultImage}
-                  readMoreUrl={news.url}
-                />
+                <Link
+                  to={`/news/${encodeURIComponent(news.title)}`}
+                  key={`${news.title}-${index}`}
+                  className="hover:scale-[1.01] transition-transform"
+                >
+                  <NewsCard
+                    title={news.title}
+                    summary={news.summary}
+                    imageUrl={news.image || defaultImage}
+                    readMoreUrl={news.url}
+                  />
+                </Link>
               ))
             ) : (
               <p className="text-center text-gray-600">No news available.</p>
@@ -96,6 +117,7 @@ const App: React.FC = () => {
               </button>
             </div>
           )}
+
           {filteredNews.length > 0 && (
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -105,7 +127,6 @@ const App: React.FC = () => {
             </button>
           )}
         </main>
-
         <Footer />
       </div>
     </div>

@@ -6,6 +6,9 @@ transformers
 html2image
 sumy
 feedparser
+newspaper3k
+tqdm
+lxml_html_clean
 # sentencepiece
 # tensorflow
 # torch==2.2.2
