@@ -20,6 +20,7 @@ const NewsDetailPage: React.FC = () => {
   const decodedTitle = decodeURIComponent(id || "");
   const [newsItem, setNewsItem] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [platform, setPlatform] = useState<"instagram" | "facebook" | "twitter" | "whatsapp">("instagram");
 
   const defaultImage = "/no-image.jpg";
 
@@ -45,15 +46,19 @@ const NewsDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-3 gap-10">
-        <div className="md:col-span-2">
+      <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-10 items-start">
+        {/* Left: Main Content */}
+        <div className="flex-1">
           <Link to="/" className="text-purple-700 underline mb-4 inline-block">
             ← Back to Home
           </Link>
 
-          <h1 className="text-3xl font-bold mb-4">{newsItem.title}</h1>
+          <h1 className="text-4xl font-extrabold mb-4 drop-shadow">
+            {newsItem.title}
+          </h1>
           <p className="text-sm text-gray-600 mb-4">
-            <span className="font-semibold">Publisher:</span> {newsItem.publisher} | <span className="font-semibold">Category:</span> {newsItem.category}
+            <span className="font-semibold">Publisher:</span> {newsItem.publisher} |{" "}
+            <span className="font-semibold">Category:</span> {newsItem.category}
           </p>
 
           <img
@@ -80,23 +85,41 @@ const NewsDetailPage: React.FC = () => {
           </a>
         </div>
 
-        <div className="">
-          <h2 className="text-xl font-bold mb-4">Post Now</h2>
+        {/* Right: Social Preview */}
+        <div className="flex flex-col py-14 items-center w-full md:w-[370px] mt-20 md:mt-0">
+          <h2 className="text-xl text-pink-500 font-bold mb-4">
+            Preview on {platform.charAt(0).toUpperCase() + platform.slice(1)}
+          </h2>
 
           <SocialMediaPreview
+            platform={platform}
             image={newsItem.image}
             title={newsItem.title}
             summary={newsItem.summary}
             hashtags={["Breaking", newsItem.category, "News"]}
+            publisher={newsItem.publisher}
           />
 
-          <div className="mt-6 flex flex-col gap-3">
-            <button className="bg-pink-600 text-white py-2 rounded">Instagram</button>
-            <button className="bg-blue-600 text-white py-2 rounded">Facebook</button>
-            <button className="bg-cyan-500 text-white py-2 rounded">Twitter</button>
-            <button className="bg-green-600 text-white py-2 rounded">WhatsApp</button>
-            <button className="mt-2 bg-purple-700 text-white py-2 rounded hover:bg-purple-800">Continue →</button>
+          {/* Platform Switch Buttons */}
+          <div className="mt-6 flex flex-wrap gap-2 justify-center">
+            {["instagram", "facebook", "twitter", "whatsapp"].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPlatform(p as any)}
+                className={`px-3 py-2 rounded text-white font-medium ${
+                  platform === p
+                    ? "bg-purple-700"
+                    : "bg-gray-500 hover:bg-gray-600"
+                }`}
+              >
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </button>
+            ))}
           </div>
+
+          <button className="mt-4 w-full bg-purple-700 text-white py-2 rounded hover:bg-purple-800">
+            Post Now →
+          </button>
         </div>
       </div>
     </div>
