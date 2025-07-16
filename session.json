@@ -1,0 +1,36 @@
+{
+    "uuids": {
+        "phone_id": "15cb97f0-b5bc-4936-a044-21c310a405e7",
+        "uuid": "9f726647-3b6a-49ce-8574-05740fddc23c",
+        "client_session_id": "bebe5a6f-cfb6-40c3-b8ce-7d02eaf98fd8",
+        "advertising_id": "ab16ea01-5f6e-4675-aab6-61f8d6d804c0",
+        "android_device_id": "android-1ebfa1577c8dff6c",
+        "request_id": "7ceb3c58-c11a-413c-a72c-d34eb9544a1a",
+        "tray_session_id": "74dce981-e3d6-462a-bf93-b35883e97242"
+    },
+    "mid": "aHdQWwABAAEfs5h1Asda0YMbxjyl",
+    "ig_u_rur": null,
+    "ig_www_claim": null,
+    "authorization_data": {
+        "ds_user_id": "75455603076",
+        "sessionid": "75455603076%3ABmna74woVmimEw%3A6%3AAYfVmKGc1lfYktqcvjYtgPpqw2xSlCyVFj2t8FWtlw"
+    },
+    "cookies": {},
+    "last_login": 1752649893.1266282,
+    "device_settings": {
+        "app_version": "218.0.0.0.0",
+        "android_version": 29,
+        "android_release": "10.0",
+        "dpi": "420dpi",
+        "resolution": "1080x1920",
+        "manufacturer": "Samsung",
+        "device": "SM-G973F",
+        "model": "Galaxy S10",
+        "cpu": "exynos9820"
+    },
+    "user_agent": "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; 6T Dev; devitron; qcom; en_US; 314665256)",
+    "country": "US",
+    "country_code": 1,
+    "locale": "en_US",
+    "timezone_offset": -14400
+}

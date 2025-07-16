@@ -3,3 +3,4 @@ myenv/
 Old data/
 data/
 __pycache__/
+.env/
