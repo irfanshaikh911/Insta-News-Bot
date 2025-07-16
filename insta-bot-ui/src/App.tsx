@@ -69,68 +69,70 @@ const App: React.FC = () => {
       : newsData.filter((item) => item.category === filteredCategory);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 transition-all duration-300">
-      <div
-        className={`flex flex-col flex-1 transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : ""
-        }`}
-      >
-        <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        <CategoryBar
-          selectedCategory={filteredCategory}
-          onSelectCategory={setFilteredCategory}
-        />
+    <div className="relative flex flex-col min-h-screen bg-gray-100">
 
-        <main className="px-6 py-10">
-          <h1 className="text-3xl font-bold text-center mb-10 text-gray-800">
-            {filteredCategory === "All" ? "Top News" : `${filteredCategory} News`}
-          </h1>
+      {/* Navbar */}
+      <Navbar />
 
-          <div className="flex flex-wrap justify-center gap-8">
-            {filteredNews.length > 0 ? (
-              filteredNews.slice(0, visibleCount).map((news, index) => (
-                <Link
-                  to={`/news/${encodeURIComponent(news.title)}`}
-                  key={`${news.title}-${index}`}
-                  className="hover:scale-[1.01] transition-transform"
-                >
-                  <NewsCard
-                    title={news.title}
-                    summary={news.summary}
-                    imageUrl={news.image || defaultImage}
-                    readMoreUrl={news.url}
-                  />
-                </Link>
-              ))
-            ) : (
-              <p className="text-center text-gray-600">No news available.</p>
-            )}
-          </div>
+      {/* Category Selector */}
+      <CategoryBar
+        selectedCategory={filteredCategory}
+        onSelectCategory={setFilteredCategory}
+      />
 
-          {visibleCount < filteredNews.length && (
-            <div className="text-center mt-8">
-              <button
-                onClick={() => setVisibleCount((prev) => prev + 6)}
-                className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded-md"
+      {/* Main Content */}
+      <main className="flex-1 px-4 sm:px-6 py-10">
+        <h1 className="text-3xl font-bold text-center mb-10 text-gray-800">
+          {filteredCategory === "All" ? "Top News" : `${filteredCategory} News`}
+        </h1>
+
+        <div className="flex flex-wrap justify-center gap-8">
+          {filteredNews.length > 0 ? (
+            filteredNews.slice(0, visibleCount).map((news, index) => (
+              <Link
+                to={`/news/${encodeURIComponent(news.title)}`}
+                key={`${news.title}-${index}`}
+                className="hover:scale-[1.01] transition-transform"
               >
-                Show More
-              </button>
-            </div>
+                <NewsCard
+                  title={news.title}
+                  summary={news.summary}
+                  imageUrl={news.image || defaultImage}
+                  readMoreUrl={news.url}
+                />
+              </Link>
+            ))
+          ) : (
+            <p className="text-center text-gray-600">No news available.</p>
           )}
+        </div>
 
-          {filteredNews.length > 0 && (
+        {visibleCount < filteredNews.length && (
+          <div className="text-center mt-8">
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="fixed bottom-6 right-6 bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded-full shadow-md z-50"
+              onClick={() => setVisibleCount((prev) => prev + 6)}
+              className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded-md"
             >
-              ↑ Back to Top
+              Show More
             </button>
-          )}
-        </main>
-        <Footer />
-      </div>
+          </div>
+        )}
+      </main>
+
+      {/* Back to Top */}
+      {filteredNews.length > 0 && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded-full shadow-md z-50"
+        >
+          ↑ Back to Top
+        </button>
+      )}
+
+      <Footer />
     </div>
   );
+
 };
 
 export default App;

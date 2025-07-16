@@ -22,7 +22,6 @@ const NewsDetailPage: React.FC = () => {
   const [platform, setPlatform] = useState<"instagram" | "facebook" | "twitter" | "whatsapp">("instagram");
   const [showSummaryOnly, setShowSummaryOnly] = useState(false);
 
-  // New states for challenge code modal
   const [challengeRequired, setChallengeRequired] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [submittingCode, setSubmittingCode] = useState(false);
@@ -50,42 +49,55 @@ const NewsDetailPage: React.FC = () => {
   };
 
   const handlePostNow = async () => {
-    if (!newsItem || posting) return;
+    if (!newsItem) return;
 
-    setPosting(true); // lock the button
-
+    setPosting(true);
     try {
+      // const response = await fetch("http://localhost:5000/post-ai", {
+      // const response = await fetch("http://localhost:5000/post", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     title: newsItem.title,
+      //     full_story: newsItem.full_story,
+      //     url: newsItem.url,
+      //     image: newsItem.image,
+      //     category: newsItem.category,
+      //   }),
+      // });
       const response = await fetch("http://localhost:5000/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newsItem.title,
-          summary: newsItem.summary,
+          summary: newsItem.summary, // ✅ Add this
+          full_story: newsItem.full_story,
           url: newsItem.url,
           image: newsItem.image,
+          category: newsItem.category,
         }),
       });
 
       const result = await response.json();
+      setPosting(false);
 
-      if (result.success) {
-        alert("✅ Successfully posted!");
-      } else if (result.challenge_required) {
+      if (result.challenge_required) {
         setChallengeRequired(true);
+      } else if (result.success) {
+        alert("✅ Posted with AI!");
       } else {
-        alert("❌ Failed to post: " + result.error);
+        alert("❌ Error: " + result.error);
       }
-    } catch (error) {
-      alert("❌ Network error");
-    } finally {
-      setPosting(false); // unlock after complete
+    } catch (err) {
+      setPosting(false);
+      alert("❌ Error posting: " + (err as any).message);
     }
   };
 
   const handleSubmitCode = async () => {
     if (!codeInput) return;
-    setSubmittingCode(true);
 
+    setSubmittingCode(true);
     const response = await fetch("http://localhost:5000/submit-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -103,8 +115,6 @@ const NewsDetailPage: React.FC = () => {
       alert("❌ Code failed: " + result.error);
     }
   };
-  
-
 
   if (loading) return <p className="text-center mt-10 text-gray-600">Loading...</p>;
   if (!newsItem) return <p className="text-center mt-10 text-red-500">Article not found.</p>;
@@ -114,7 +124,7 @@ const NewsDetailPage: React.FC = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-12 md:gap-16">
-        {/* Left Content */}
+        {/* Left: Content */}
         <div className="flex-1 w-full">
           <Link to="/" className="text-purple-700 underline mb-4 inline-block">← Back to Home</Link>
           <h1 className="text-4xl font-extrabold mb-4 text-gray-800">{newsItem.title}</h1>
@@ -122,6 +132,7 @@ const NewsDetailPage: React.FC = () => {
             <span className="font-semibold">Publisher:</span> {newsItem.publisher} |{" "}
             <span className="font-semibold">Category:</span> {newsItem.category}
           </p>
+
           <img
             src={newsItem.image?.trim() || defaultImage}
             alt={newsItem.title}
@@ -160,7 +171,7 @@ const NewsDetailPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Right Sidebar */}
+        {/* Right: Social Preview */}
         <div className="w-full md:w-[380px] py-6 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
             Preview on {platform.charAt(0).toUpperCase() + platform.slice(1)}
@@ -193,12 +204,6 @@ const NewsDetailPage: React.FC = () => {
             ))}
           </div>
 
-          {/* <button
-            onClick={handlePostNow}
-            className="mt-4 w-full bg-purple-700 text-white py-2 rounded hover:bg-purple-800"
-          >
-            Post Now →
-          </button> */}
           <button
             onClick={handlePostNow}
             disabled={posting}
@@ -218,11 +223,10 @@ const NewsDetailPage: React.FC = () => {
               "Post Now →"
             )}
           </button>
-
         </div>
       </div>
 
-      {/* Challenge Code Modal */}
+      {/* Challenge Modal */}
       {challengeRequired && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[90%] max-w-md">

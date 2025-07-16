@@ -1,9 +1,36 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
+from ai_tools import generate_summary, generate_hashtags
+import os
+import json
+from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Allow React frontend
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+POSTED_FILE = "posted.json"
+
+def log_post(title, summary, image, url, platform="instagram", status="Posted"):
+    entry = {
+        "title": title,
+        "summary": summary,
+        "image": image,
+        "url": url,
+        "platform": platform,
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": status
+    }
+    try:
+        data = []
+        if os.path.exists(POSTED_FILE):
+            with open(POSTED_FILE, "r") as f:
+                data = json.load(f)
+        data.append(entry)
+        with open(POSTED_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print("Failed to log post:", e)
 
 @app.route("/post", methods=["POST"])
 def post_now():
@@ -13,18 +40,33 @@ def post_now():
         summary = data.get("summary")
         url = data.get("url")
         image = data.get("image")
+        full_story = data.get("full_story")
 
         if not all([title, summary, url, image]):
             return jsonify({"success": False, "error": "Missing required fields"}), 400
 
-        caption = f"{title}\n\n{summary}\n\nRead more: {url}\n\n#news #update #breaking"
+        improved_summary = generate_summary(full_story or summary)
+        hashtags = generate_hashtags(full_story or summary)
+        # hashtag_str = " ".join(hashtags)
+        # From inside the post_now() function:
+        hashtag_str = " ".join(hashtags)
+        caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{hashtag_str}"
+
+        # caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{hashtag_str}"
 
         result = post_to_instagram(caption, image)
-        return jsonify({"success": result})
-    
+        status = "Posted" if result else "Failed"
+        log_post(title, improved_summary, image, url, platform="instagram", status=status)
+
+        return jsonify({
+            "success": result,
+            "caption": caption,
+            "hashtags": hashtags
+        })
+
     except Exception as e:
         if "challenge_required" in str(e).lower():
-            return jsonify({"challenge_required": True})
+            return jsonify({"success": False, "challenge_required": True, "error": str(e)})
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/submit-code", methods=["POST"])
@@ -41,5 +83,43 @@ def handle_challenge_code():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/posted", methods=["GET"])
+def get_posted():
+    if os.path.exists(POSTED_FILE):
+        with open(POSTED_FILE, "r") as f:
+            return jsonify(json.load(f))
+    return jsonify([])
+
+@app.route("/posted/<int:index>", methods=["DELETE"])
+def delete_post(index):
+    try:
+        if os.path.exists(POSTED_FILE):
+            with open(POSTED_FILE, "r") as f:
+                data = json.load(f)
+            if 0 <= index < len(data):
+                data.pop(index)
+                with open(POSTED_FILE, "w") as f:
+                    json.dump(data, f, indent=2)
+                return jsonify({"success": True})
+        return jsonify({"error": "Invalid index"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/posted/<int:index>", methods=["PUT"])
+def edit_post(index):
+    try:
+        new_data = request.get_json()
+        if os.path.exists(POSTED_FILE):
+            with open(POSTED_FILE, "r") as f:
+                data = json.load(f)
+            if 0 <= index < len(data):
+                data[index].update(new_data)
+                with open(POSTED_FILE, "w") as f:
+                    json.dump(data, f, indent=2)
+                return jsonify({"success": True})
+        return jsonify({"error": "Invalid index"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
-    app.run(debug=True, threaded=False)  # Force single-threaded to avoid instagrapi issues
+    app.run(debug=True, threaded=False)
