@@ -3,11 +3,12 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
 from ai_tools import generate_summary, generate_hashtags
-from text_to_speech import synthesize_speech
+# from text_to_speech import synthesize_speech
 import io
 import os, json, requests
 from datetime import datetime
 from dotenv import load_dotenv
+from dotenv import set_key
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -17,6 +18,32 @@ load_dotenv()
 
 ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+
+ENV_PATH = '.env'
+
+@app.route('/save-instagram-login', methods=['POST'])
+def save_instagram_login():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'error': 'No JSON received'}), 400
+
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+
+    try:
+        load_dotenv(ENV_PATH)
+        set_key(ENV_PATH, 'INSTA_USERNAME', username)
+        set_key(ENV_PATH, 'INSTA_PASSWORD', password)
+        return jsonify({'message': 'Login info saved'}), 200
+    except Exception as e:
+        print("Error saving to .env:", e)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 
 
 def log_post(title, summary, image, url, platform="instagram", status="Posted"):
@@ -70,17 +97,17 @@ def post_now():
             return jsonify({"success": False, "challenge_required": True, "error": str(e)})
         return jsonify({"success": False, "error": str(e)}), 500
     
-@app.route("/tts", methods=["POST"])
-def tts_endpoint():
-    data = request.get_json()
-    text = data.get("text", "")
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
+# @app.route("/tts", methods=["POST"])
+# def tts_endpoint():
+#     data = request.get_json()
+#     text = data.get("text", "")
+#     if not text:
+#         return jsonify({"error": "No text provided"}), 400
 
-    audio_bytes = synthesize_speech(text)
-    buf = io.BytesIO(audio_bytes)
-    buf.seek(0)
-    return send_file(buf, mimetype="audio/wav")
+#     audio_bytes = synthesize_speech(text)
+#     buf = io.BytesIO(audio_bytes)
+#     buf.seek(0)
+#     return send_file(buf, mimetype="audio/wav")
 
 
 @app.route("/send-email", methods=["POST"])

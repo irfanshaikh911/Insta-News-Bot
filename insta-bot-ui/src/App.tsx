@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import CategoryBar from "./components/CategoryBar";
 import Papa from "papaparse";
 
+
 interface NewsItem {
   title: string;
   summary: string;
@@ -17,8 +18,7 @@ interface NewsItem {
   full_story: string;
 }
 
-const App: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const App = ({ isLoggedIn }: { isLoggedIn: boolean }) => {
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [shuffledNews, setShuffledNews] = useState<NewsItem[]>([]);
   const [filteredCategory, setFilteredCategory] = useState<string>("All");
@@ -72,7 +72,7 @@ const App: React.FC = () => {
     <div className="relative flex flex-col min-h-screen bg-gray-100">
 
       {/* Navbar */}
-      <Navbar />
+      <Navbar isLoggedIn={isLoggedIn} />
 
       {/* Category Selector */}
       <CategoryBar

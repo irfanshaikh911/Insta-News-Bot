@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  FaUserCircle,
-  FaFacebookF,
-  FaTwitter,
-  FaInstagram,
-  FaWhatsapp,
-} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { FaUserCircle } from "react-icons/fa";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -13,6 +8,8 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const [location, setLocation] = useState("Fetching location...");
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -34,42 +31,65 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
       .catch(() => setLocation("Pune, India"));
   }, []);
 
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  const handleLoginClick = () => {
+    navigate("/instagram-login");
+  };
+
   return (
-    <nav className="w-full bg-white/10 backdrop-blur-md border-b border-gray-200 text-black font-sans py-6 px-6">
-      <div className="relative flex flex-col md:flex-row items-center justify-between gap-y-4">
-        {/* Left: Date & Location */}
-        <div className="flex flex-col items-start self-start md:self-center space-y-1">
-          <span className="text-base font-semibold">{today}</span>
-          <span className="text-sm text-gray-700">📍 {location}</span>
+    <nav className="w-full bg-white/10 backdrop-blur-md border-b border-gray-200 text-black font-sans px-4 py-4 sm:px-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* LEFT SIDE */}
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+          <div className="flex flex-col text-left">
+            <span className="text-base font-semibold">{today}</span>
+            <span className="text-sm text-gray-700">📍 {location}</span>
+          </div>
         </div>
 
-        {/* Center: Logo */}
-        <div className="absolute left-1/2 transform -translate-x-1/2">
+        {/* CENTER: LOGO */}
+        <div className="flex justify-center flex-shrink-0 w-full md:w-auto">
           <img
             src="/Instanews.png"
             alt="Logo"
-            className="h-24 object-contain"
+            className="h-20 sm:h-24 object-contain"
           />
         </div>
 
-        {/* Right: Login, Social, Search */}
-        <div className="flex flex-col items-end space-y-3 self-start md:self-center">
+        {/* RIGHT SIDE: LOGIN + SEARCH */}
+        <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           {/* Login */}
-          <button className="flex items-center text-base font-medium hover:text-purple-600 space-x-1">
+          <button
+            onClick={handleLoginClick}
+            className="flex items-center text-base font-medium hover:text-purple-600 space-x-1"
+          >
             <FaUserCircle className="text-2xl" />
             <span>Login</span>
           </button>
 
-          {/* Social Icons */}
-
-          {/* Search */}
+          {/* Search Bar */}
           <div className="flex items-center space-x-2">
             <input
               type="text"
               placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="text-sm border border-gray-300 rounded-md px-3 py-1 w-52 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
-            <button className="bg-purple-700 hover:bg-purple-800 text-white text-sm font-medium px-4 py-1 rounded-md">
+            <button
+              onClick={handleSearch}
+              className="bg-purple-700 hover:bg-purple-800 text-white text-sm font-medium px-4 py-1 rounded-md"
+            >
               Search
             </button>
           </div>

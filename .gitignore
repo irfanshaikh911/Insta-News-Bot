@@ -1,6 +1,6 @@
 config/
 myenv/
-Old data/
-data/
 __pycache__/
 .env/
+private/
+posted.json/

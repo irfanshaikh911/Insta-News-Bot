@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
+import defaultLogo from "../assets/Instanews.png";
+import loggedInLogo from "../assets/our-logo.jpg"; // make sure path is correct
 
-interface NavbarProps {
-  onMenuClick: () => void;
-}
-
-const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
+const Navbar: React.FC = () => {
   const [location, setLocation] = useState("Fetching location...");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
   const today = new Date().toLocaleDateString(undefined, {
@@ -29,6 +28,9 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         }
       })
       .catch(() => setLocation("Pune, India"));
+
+    const loginData = localStorage.getItem("insta_login");
+    if (loginData) setIsLoggedIn(true);
   }, []);
 
   const handleSearch = () => {
@@ -39,6 +41,10 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
+  };
+
+  const handleLogin = () => {
+    navigate("/instagram-login");
   };
 
   return (
@@ -62,18 +68,21 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         {/* CENTER: LOGO */}
         <div className="flex justify-center flex-shrink-0 w-full md:w-auto">
           <img
-            src="/Instanews.png"
+            src={isLoggedIn ? loggedInLogo : defaultLogo}
             alt="Logo"
-            className="h-20 sm:h-24 object-contain"
+            className="h-20 sm:h-24 object-contain transition-all duration-500 ease-in-out rounded-md"
           />
         </div>
 
         {/* RIGHT SIDE: LOGIN + SEARCH */}
         <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           {/* Login */}
-          <button className="flex items-center text-base font-medium hover:text-purple-600 space-x-1">
+          <button
+            onClick={handleLogin}
+            className="flex items-center text-base font-medium hover:text-purple-600 space-x-1"
+          >
             <FaUserCircle className="text-2xl" />
-            <span>Login</span>
+            <span>{isLoggedIn ? "Logged In" : "Login"}</span>
           </button>
 
           {/* Search Bar */}
