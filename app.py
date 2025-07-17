@@ -1,8 +1,10 @@
 # Updated Flask Backend with Elastic Email + SMS
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
 from ai_tools import generate_summary, generate_hashtags
+from text_to_speech import synthesize_speech
+import io
 import os, json, requests
 from datetime import datetime
 from dotenv import load_dotenv
@@ -67,6 +69,18 @@ def post_now():
         if "challenge_required" in str(e).lower():
             return jsonify({"success": False, "challenge_required": True, "error": str(e)})
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/tts", methods=["POST"])
+def tts_endpoint():
+    data = request.get_json()
+    text = data.get("text", "")
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    audio_bytes = synthesize_speech(text)
+    buf = io.BytesIO(audio_bytes)
+    buf.seek(0)
+    return send_file(buf, mimetype="audio/wav")
 
 
 @app.route("/send-email", methods=["POST"])
@@ -90,10 +104,13 @@ def send_email():
         }
 
         r = requests.post("https://api.elasticemail.com/v2/email/send", data=payload)
-        if r.status_code == 200:
+        response_data = r.json()
+        if r.status_code == 200 and response_data.get("success"):
             return jsonify({"success": True})
         else:
-            return jsonify({"success": False, "error": r.text}), 500
+            error_msg = response_data.get("message", r.text)
+            return jsonify({"success": False, "error": error_msg}), 500
+        
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

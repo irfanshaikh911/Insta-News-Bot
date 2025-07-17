@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef} from "react";
 import { useParams, Link } from "react-router-dom";
 import Papa from "papaparse";
 import Navbar from "../components/Navbar";
 import SocialMediaPreview from "../components/SocialMediaPreview";
+import toast, { Toaster } from "react-hot-toast";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { ImSpinner2 } from "react-icons/im";
-
 
 interface NewsItem {
   title: string;
@@ -22,8 +22,10 @@ const NewsDetailPage: React.FC = () => {
   const decodedTitle = decodeURIComponent(id || "");
   const [newsItem, setNewsItem] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [platform, setPlatform] = useState<"instagram" | "facebook" | "twitter" | "whatsapp">("instagram");
+  const [platform] = useState<"instagram">("instagram");
   const [showSummaryOnly, setShowSummaryOnly] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [challengeRequired, setChallengeRequired] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [submittingCode, setSubmittingCode] = useState(false);
@@ -31,6 +33,7 @@ const NewsDetailPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
+
 
   const defaultImage = "/no-image.jpg";
 
@@ -52,10 +55,8 @@ const NewsDetailPage: React.FC = () => {
   const validatePhone = (phone: string) => /^\+?[0-9]{10,15}$/.test(phone);
 
   const sendEmail = async () => {
-    if (!validateEmail(email)) {
-      alert("❌ Invalid email address");
-      return;
-    }
+    if (!validateEmail(email)) return toast.error("Invalid email address");
+
     setSending(true);
     const res = await fetch("http://localhost:5000/send-email", {
       method: "POST",
@@ -69,15 +70,13 @@ const NewsDetailPage: React.FC = () => {
       }),
     });
     const data = await res.json();
-    alert(data.success ? "✅ Email sent!" : "❌ Email failed: " + data.error);
     setSending(false);
+    data.success ? toast.success("Email sent!") : toast.error("Email failed: " + data.error);
   };
 
   const sendSMS = async () => {
-    if (!validatePhone(phone)) {
-      alert("❌ Invalid phone number. Use format +91XXXXXXXXXX");
-      return;
-    }
+    if (!validatePhone(phone)) return toast.error("Invalid phone number");
+
     setSending(true);
     const res = await fetch("http://localhost:5000/send-sms", {
       method: "POST",
@@ -88,13 +87,8 @@ const NewsDetailPage: React.FC = () => {
       }),
     });
     const data = await res.json();
-    alert(data.success ? "✅ SMS sent!" : "❌ SMS failed: " + data.error);
     setSending(false);
-  };
-
-  const generateSummary = (text: string) => {
-    const words = text.split(" ");
-    return words.slice(0, 70).join(" ") + (words.length > 70 ? "..." : "");
+    data.success ? toast.success("SMS sent!") : toast.error("SMS failed: " + data.error);
   };
 
   const handlePostNow = async () => {
@@ -106,6 +100,7 @@ const NewsDetailPage: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          platform,
           title: newsItem.title,
           summary: newsItem.summary,
           full_story: newsItem.full_story,
@@ -121,15 +116,48 @@ const NewsDetailPage: React.FC = () => {
       if (result.challenge_required) {
         setChallengeRequired(true);
       } else if (result.success) {
-        alert("✅ Posted with AI!");
+        toast.success("✅ Posted to Instagram!");
       } else {
-        alert("❌ Error: " + result.error);
+        toast.error("❌ " + result.error);
       }
     } catch (err) {
       setPosting(false);
-      alert("❌ Error posting: " + (err as any).message);
+      toast.error("❌ Post failed: " + (err as any).message);
     }
   };
+  const handleListen = async () => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+      return;
+    }
+
+    const res = await fetch("http://localhost:5000/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: newsItem.full_story || newsItem.summary }),
+    });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    if (audioRef.current) {
+      audioRef.current.src = url;
+      audioRef.current.play();
+      setIsPlaying(true);
+
+      audioRef.current.onended = () => setIsPlaying(false);
+    } else {
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.play();
+      setIsPlaying(true);
+
+      audio.onended = () => setIsPlaying(false);
+    }
+  };
+
+
 
   const handleSubmitCode = async () => {
     if (!codeInput) return;
@@ -145,23 +173,39 @@ const NewsDetailPage: React.FC = () => {
     setSubmittingCode(false);
 
     if (result.success) {
-      alert("✅ Verification successful! Now click 'Post Now' again.");
+      toast.success("✅ Verification successful! Click 'Post Now' again.");
       setChallengeRequired(false);
       setCodeInput("");
     } else {
-      alert("❌ Code failed: " + result.error);
+      toast.error("❌ Code failed: " + result.error);
     }
   };
+
+  const generateSummary = (text: string) => {
+    const words = text.split(" ");
+    return words.slice(0, 70).join(" ") + (words.length > 70 ? "..." : "");
+  };
+  // const handleListen = async () => {
+  //   const res = await fetch("http://localhost:5001/tts", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ text: newsItem.full_story || newsItem.summary }),
+  //   });
+  //   const blob = await res.blob();
+  //   const url = URL.createObjectURL(blob);
+  //   const audio = new Audio(url);
+  //   audio.play();
+  // };
 
   if (loading) return <p className="text-center mt-10 text-gray-600">Loading...</p>;
   if (!newsItem) return <p className="text-center mt-10 text-red-500">Article not found.</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 overflow-x-hidden">
+      <Toaster position="top-center" />
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-12 md:gap-16">
-        {/* Left Content */}
         <div className="flex-1 w-full">
           <Link to="/" className="text-purple-700 underline mb-4 inline-block">← Back to Home</Link>
           <h1 className="text-4xl font-extrabold mb-4 text-gray-800">{newsItem.title}</h1>
@@ -179,8 +223,8 @@ const NewsDetailPage: React.FC = () => {
             }}
             className="w-full h-auto object-contain rounded-lg mb-6 max-h-[480px] shadow-md"
           />
-
-          <div className="mb-4">
+          
+          <div className="mb-4 flex items-center justify-between w-full">
             <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"
@@ -190,6 +234,18 @@ const NewsDetailPage: React.FC = () => {
               />
               <span className="text-sm text-gray-700">Show Summary Only</span>
             </label>
+            {/* <button
+              onClick={handleListen}
+              className="px-4 py-2 bg-purple-700 text-white text-sm font-medium rounded-md hover:bg-purple-800 transition"
+            >
+              🔊 Listen to Article
+            </button> */}
+            {/* <button
+              onClick={handleListen}
+              className="px-4 py-2 bg-purple-700 text-white text-sm font-medium rounded-md hover:bg-purple-800 transition"
+            >
+              {isPlaying ? "⏹️ Stop" : "🔊 Listen to Article"}
+            </button> */}
           </div>
 
           <p className="text-lg whitespace-pre-line mb-6 leading-relaxed">
@@ -208,51 +264,41 @@ const NewsDetailPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Right Panel */}
         <div className="w-full md:w-[380px] py-6 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
-            Preview on {platform.charAt(0).toUpperCase() + platform.slice(1)}
+            Preview on Instagram
           </h2>
 
-          <div className="w-full flex justify-center">
-            <SocialMediaPreview
-              platform={platform}
-              image={newsItem.image}
-              title={newsItem.title}
-              summary={newsItem.summary}
-              hashtags={["Breaking", newsItem.category, "News"]}
-              publisher={newsItem.publisher}
-            />
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3 w-full">
-            {["instagram", "facebook", "twitter", "whatsapp"].map((p) => (
-              <button
-                key={p}
-                onClick={() => setPlatform(p as any)}
-                className={`py-2 rounded-md text-sm font-semibold ${
-                  platform === p
-                    ? "bg-purple-700 text-white shadow-md"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-              >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
-          </div>
-
+          <SocialMediaPreview
+            platform="instagram"
+            image={newsItem.image}
+            title={newsItem.title}
+            summary={newsItem.summary}
+            hashtags={["Breaking", newsItem.category, "News"]}
+            publisher={newsItem.publisher}
+          />
+  
           <button
             onClick={handlePostNow}
             disabled={posting}
-            className={`mt-4 w-full py-2 rounded text-white transition ${
-              posting ? "bg-purple-400 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"
-            }`}
+            className={`mt-6 w-48 py-2 rounded text-white font-semibold transition-all duration-300
+              ${posting
+                ? "bg-gradient-to-tr from-pink-400 to-yellow-300 cursor-not-allowed"
+                : "bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-400 shadow-lg hover:scale-105 hover:shadow-pink-400/50 hover:brightness-110"
+              }
+              flex items-center justify-center gap-2`}
           >
-            {posting ? "Posting..." : "Post Now →"}
+            {posting ? (
+              <>
+                <ImSpinner2 className="animate-spin text-xl" />
+                Posting...
+              </>
+            ) : (
+              "Post Now →"
+            )}
           </button>
 
-          {/* Email Share */}
-          {/* Email Share */}
+          {/* Share via Email */}
           <div className="w-full mt-6">
             <h4 className="font-semibold mb-2">📧 Share via Email</h4>
             <input
@@ -267,14 +313,7 @@ const NewsDetailPage: React.FC = () => {
               disabled={sending}
               className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {sending ? (
-                <>
-                  <ImSpinner2 className="animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                "Send Email"
-              )}
+              {sending ? <><ImSpinner2 className="animate-spin" /> Sending...</> : "Send Email"}
             </button>
             {!sending && email && (
               <p className={`mt-2 text-sm flex items-center gap-2 ${
@@ -286,9 +325,8 @@ const NewsDetailPage: React.FC = () => {
             )}
           </div>
 
-
-          {/* SMS Share */}
-          <div className="w-full mt-4">
+          {/* Share via SMS */}
+          {/* <div className="w-full mt-4">
             <h4 className="font-semibold mb-2">📱 Share via SMS</h4>
             <input
               type="tel"
@@ -303,13 +341,11 @@ const NewsDetailPage: React.FC = () => {
               className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
             >
               Send SMS
-            </button>
-          </div>
+            </button> */}
+          {/* </div> */}
         </div>
       </div>
-      
 
-      {/* Instagram Challenge Modal */}
       {challengeRequired && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[90%] max-w-md">
