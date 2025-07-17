@@ -3,6 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import Papa from "papaparse";
 import Navbar from "../components/Navbar";
 import SocialMediaPreview from "../components/SocialMediaPreview";
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { ImSpinner2 } from "react-icons/im";
+
 
 interface NewsItem {
   title: string;
@@ -21,11 +24,13 @@ const NewsDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [platform, setPlatform] = useState<"instagram" | "facebook" | "twitter" | "whatsapp">("instagram");
   const [showSummaryOnly, setShowSummaryOnly] = useState(false);
-
   const [challengeRequired, setChallengeRequired] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [submittingCode, setSubmittingCode] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sending, setSending] = useState(false);
 
   const defaultImage = "/no-image.jpg";
 
@@ -43,6 +48,50 @@ const NewsDetailPage: React.FC = () => {
       });
   }, [id]);
 
+  const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
+  const validatePhone = (phone: string) => /^\+?[0-9]{10,15}$/.test(phone);
+
+  const sendEmail = async () => {
+    if (!validateEmail(email)) {
+      alert("❌ Invalid email address");
+      return;
+    }
+    setSending(true);
+    const res = await fetch("http://localhost:5000/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: email,
+        subject: newsItem?.title,
+        body: `${newsItem?.summary}\n\nRead full: ${newsItem?.url}`,
+        link: newsItem?.url,
+        image: newsItem?.image,
+      }),
+    });
+    const data = await res.json();
+    alert(data.success ? "✅ Email sent!" : "❌ Email failed: " + data.error);
+    setSending(false);
+  };
+
+  const sendSMS = async () => {
+    if (!validatePhone(phone)) {
+      alert("❌ Invalid phone number. Use format +91XXXXXXXXXX");
+      return;
+    }
+    setSending(true);
+    const res = await fetch("http://localhost:5000/send-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: phone,
+        message: `${newsItem?.title}\n\nRead more: ${newsItem?.url}`,
+      }),
+    });
+    const data = await res.json();
+    alert(data.success ? "✅ SMS sent!" : "❌ SMS failed: " + data.error);
+    setSending(false);
+  };
+
   const generateSummary = (text: string) => {
     const words = text.split(" ");
     return words.slice(0, 70).join(" ") + (words.length > 70 ? "..." : "");
@@ -53,24 +102,12 @@ const NewsDetailPage: React.FC = () => {
 
     setPosting(true);
     try {
-      // const response = await fetch("http://localhost:5000/post-ai", {
-      // const response = await fetch("http://localhost:5000/post", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     title: newsItem.title,
-      //     full_story: newsItem.full_story,
-      //     url: newsItem.url,
-      //     image: newsItem.image,
-      //     category: newsItem.category,
-      //   }),
-      // });
       const response = await fetch("http://localhost:5000/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newsItem.title,
-          summary: newsItem.summary, // ✅ Add this
+          summary: newsItem.summary,
           full_story: newsItem.full_story,
           url: newsItem.url,
           image: newsItem.image,
@@ -124,7 +161,7 @@ const NewsDetailPage: React.FC = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-12 md:gap-16">
-        {/* Left: Content */}
+        {/* Left Content */}
         <div className="flex-1 w-full">
           <Link to="/" className="text-purple-700 underline mb-4 inline-block">← Back to Home</Link>
           <h1 className="text-4xl font-extrabold mb-4 text-gray-800">{newsItem.title}</h1>
@@ -171,7 +208,7 @@ const NewsDetailPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Right: Social Preview */}
+        {/* Right Panel */}
         <div className="w-full md:w-[380px] py-6 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
             Preview on {platform.charAt(0).toUpperCase() + platform.slice(1)}
@@ -211,22 +248,68 @@ const NewsDetailPage: React.FC = () => {
               posting ? "bg-purple-400 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"
             }`}
           >
-            {posting ? (
-              <div className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                </svg>
-                Posting...
-              </div>
-            ) : (
-              "Post Now →"
-            )}
+            {posting ? "Posting..." : "Post Now →"}
           </button>
+
+          {/* Email Share */}
+          {/* Email Share */}
+          <div className="w-full mt-6">
+            <h4 className="font-semibold mb-2">📧 Share via Email</h4>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email"
+              className="w-full p-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={sendEmail}
+              disabled={sending}
+              className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {sending ? (
+                <>
+                  <ImSpinner2 className="animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send Email"
+              )}
+            </button>
+            {!sending && email && (
+              <p className={`mt-2 text-sm flex items-center gap-2 ${
+                validateEmail(email) ? "text-green-600" : "text-red-500"
+              }`}>
+                {validateEmail(email) ? <FaCheckCircle /> : <FaTimesCircle />}
+                {validateEmail(email) ? "Valid email" : "Invalid email"}
+              </p>
+            )}
+          </div>
+
+
+          {/* SMS Share */}
+          <div className="w-full mt-4">
+            <h4 className="font-semibold mb-2">📱 Share via SMS</h4>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone (+91...)"
+              className="w-full p-2 border rounded mb-2"
+            />
+            <button
+              onClick={sendSMS}
+              disabled={sending}
+              className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              Send SMS
+            </button>
+          </div>
         </div>
       </div>
+      
 
-      {/* Challenge Modal */}
+      {/* Instagram Challenge Modal */}
       {challengeRequired && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[90%] max-w-md">

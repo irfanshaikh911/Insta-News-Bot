@@ -1,15 +1,21 @@
+# Updated Flask Backend with Elastic Email + SMS
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
 from ai_tools import generate_summary, generate_hashtags
-import os
-import json
+import os, json, requests
 from datetime import datetime
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 POSTED_FILE = "posted.json"
+load_dotenv()
+
+ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+
 
 def log_post(title, summary, image, url, platform="instagram", status="Posted"):
     entry = {
@@ -32,6 +38,7 @@ def log_post(title, summary, image, url, platform="instagram", status="Posted"):
     except Exception as e:
         print("Failed to log post:", e)
 
+
 @app.route("/post", methods=["POST"])
 def post_now():
     try:
@@ -47,27 +54,84 @@ def post_now():
 
         improved_summary = generate_summary(full_story or summary)
         hashtags = generate_hashtags(full_story or summary)
-        # hashtag_str = " ".join(hashtags)
-        # From inside the post_now() function:
         hashtag_str = " ".join(hashtags)
         caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{hashtag_str}"
-
-        # caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{hashtag_str}"
 
         result = post_to_instagram(caption, image)
         status = "Posted" if result else "Failed"
         log_post(title, improved_summary, image, url, platform="instagram", status=status)
 
-        return jsonify({
-            "success": result,
-            "caption": caption,
-            "hashtags": hashtags
-        })
+        return jsonify({"success": result, "caption": caption, "hashtags": hashtags})
 
     except Exception as e:
         if "challenge_required" in str(e).lower():
             return jsonify({"success": False, "challenge_required": True, "error": str(e)})
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/send-email", methods=["POST"])
+def send_email():
+    try:
+        data = request.get_json()
+        to = data.get("to")
+        subject = data.get("subject")
+        body = data.get("body")
+
+        if not to or not subject or not body:
+            return jsonify({"success": False, "error": "Missing email fields"}), 400
+
+        payload = {
+            "apikey": ELASTIC_API_KEY,
+            "from": SENDER_EMAIL,
+            "to": to,
+            "subject": subject,
+            "bodyText": body,
+            "isTransactional": True
+        }
+
+        r = requests.post("https://api.elasticemail.com/v2/email/send", data=payload)
+        if r.status_code == 200:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": r.text}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/send-sms", methods=["POST"])
+def send_sms():
+    try:
+        data = request.get_json()
+        to = data.get("to")
+        message = data.get("message")
+
+        if not to or not message:
+            return jsonify({"success": False, "error": "Missing SMS fields"}), 400
+
+        sms_payload = {
+            'authorization': os.getenv("FAST2SMS_API_KEY"),
+            'message': message,
+            'language': 'english',
+            'route': 'q',
+            'numbers': to.replace("+", "")  # Fast2SMS expects plain number
+        }
+
+        headers = {
+            'cache-control': "no-cache"
+        }
+
+        r = requests.post("https://www.fast2sms.com/dev/bulkV2", data=sms_payload, headers=headers)
+        response_data = r.json()
+
+        if r.status_code == 200 and response_data.get("return") is True:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": response_data.get("message", "Unknown error")}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route("/submit-code", methods=["POST"])
 def handle_challenge_code():
@@ -79,9 +143,10 @@ def handle_challenge_code():
 
         submit_challenge_code(code)
         return jsonify({"success": True})
-    
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route("/posted", methods=["GET"])
 def get_posted():
@@ -89,6 +154,7 @@ def get_posted():
         with open(POSTED_FILE, "r") as f:
             return jsonify(json.load(f))
     return jsonify([])
+
 
 @app.route("/posted/<int:index>", methods=["DELETE"])
 def delete_post(index):
@@ -105,6 +171,7 @@ def delete_post(index):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/posted/<int:index>", methods=["PUT"])
 def edit_post(index):
     try:
@@ -120,6 +187,7 @@ def edit_post(index):
         return jsonify({"error": "Invalid index"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True, threaded=False)
