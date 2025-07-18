@@ -1,5 +1,4 @@
-# Updated Flask Backend with Elastic Email + SMS
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
 from ai_tools import generate_summary, generate_hashtags
@@ -7,21 +6,19 @@ from ai_tools import generate_summary, generate_hashtags
 import io
 import os, json, requests
 from datetime import datetime
-from dotenv import load_dotenv
-from dotenv import set_key
+from dotenv import load_dotenv, set_key
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+app = Flask(__name__, static_folder="frontend/dist", static_url_path="/")
+CORS(app)
 
 POSTED_FILE = "posted.json"
-load_dotenv()
+ENV_PATH = '.env'
 
+load_dotenv()
 ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 
-ENV_PATH = '.env'
-
-@app.route('/save-instagram-login', methods=['POST'])
+@app.route("/save-instagram-login", methods=["POST"])
 def save_instagram_login():
     data = request.get_json()
 
@@ -35,16 +32,12 @@ def save_instagram_login():
         return jsonify({'error': 'Username and password required'}), 400
 
     try:
-        load_dotenv(ENV_PATH)
         set_key(ENV_PATH, 'INSTA_USERNAME', username)
         set_key(ENV_PATH, 'INSTA_PASSWORD', password)
         return jsonify({'message': 'Login info saved'}), 200
     except Exception as e:
         print("Error saving to .env:", e)
         return jsonify({'error': 'Internal server error'}), 500
-
-
-
 
 def log_post(title, summary, image, url, platform="instagram", status="Posted"):
     entry = {
@@ -66,7 +59,6 @@ def log_post(title, summary, image, url, platform="instagram", status="Posted"):
             json.dump(data, f, indent=2)
     except Exception as e:
         print("Failed to log post:", e)
-
 
 @app.route("/post", methods=["POST"])
 def post_now():
@@ -96,19 +88,6 @@ def post_now():
         if "challenge_required" in str(e).lower():
             return jsonify({"success": False, "challenge_required": True, "error": str(e)})
         return jsonify({"success": False, "error": str(e)}), 500
-    
-# @app.route("/tts", methods=["POST"])
-# def tts_endpoint():
-#     data = request.get_json()
-#     text = data.get("text", "")
-#     if not text:
-#         return jsonify({"error": "No text provided"}), 400
-
-#     audio_bytes = synthesize_speech(text)
-#     buf = io.BytesIO(audio_bytes)
-#     buf.seek(0)
-#     return send_file(buf, mimetype="audio/wav")
-
 
 @app.route("/send-email", methods=["POST"])
 def send_email():
@@ -137,11 +116,9 @@ def send_email():
         else:
             error_msg = response_data.get("message", r.text)
             return jsonify({"success": False, "error": error_msg}), 500
-        
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 @app.route("/send-sms", methods=["POST"])
 def send_sms():
@@ -158,7 +135,7 @@ def send_sms():
             'message': message,
             'language': 'english',
             'route': 'q',
-            'numbers': to.replace("+", "")  # Fast2SMS expects plain number
+            'numbers': to.replace("+", "")
         }
 
         headers = {
@@ -176,7 +153,6 @@ def send_sms():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route("/submit-code", methods=["POST"])
 def handle_challenge_code():
     try:
@@ -191,14 +167,12 @@ def handle_challenge_code():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route("/posted", methods=["GET"])
 def get_posted():
     if os.path.exists(POSTED_FILE):
         with open(POSTED_FILE, "r") as f:
             return jsonify(json.load(f))
     return jsonify([])
-
 
 @app.route("/posted/<int:index>", methods=["DELETE"])
 def delete_post(index):
@@ -214,7 +188,6 @@ def delete_post(index):
         return jsonify({"error": "Invalid index"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/posted/<int:index>", methods=["PUT"])
 def edit_post(index):
@@ -232,6 +205,15 @@ def edit_post(index):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Serve React frontend
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == "__main__":
-    app.run(debug=True, threaded=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
