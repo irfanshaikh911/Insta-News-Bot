@@ -89,8 +89,9 @@ def post_now():
         result = post_to_instagram(caption, image)
         status = "Posted" if result else "Failed"
         log_post(title, improved_summary, image, url, platform="instagram", status=status)
+        
 
-        return jsonify({"success": result, "caption": caption, "hashtags": hashtags})
+        return jsonify({"success": result, "caption": caption, "hashtags": hashtags}), 200
 
     except Exception as e:
         if "challenge_required" in str(e).lower():
