@@ -5,8 +5,8 @@ cd frontend
 npm install
 npm run build
 
-cd ../backend
-pip install -r requirements.txt
+# cd ../backend
+pip install -r backend/requirements.txt
 
 exec python backend/app.py
 
