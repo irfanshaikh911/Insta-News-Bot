@@ -8,7 +8,7 @@ import os, json, requests
 from datetime import datetime
 from dotenv import load_dotenv, set_key
 
-app = Flask(__name__, static_folder="frontend/dist", static_url_path="/")
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path="/")
 CORS(app)
 
 POSTED_FILE = "posted.json"
@@ -17,6 +17,14 @@ ENV_PATH = '.env'
 load_dotenv()
 ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+
+@app.route('/')
+def serve_root():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
 
 @app.route("/save-instagram-login", methods=["POST"])
 def save_instagram_login():
