@@ -8,4 +8,5 @@ npm run build
 cd ../backend
 pip install -r requirements.txt
 
-exec python app.py
+exec python backend/app.py
+
