@@ -2,8 +2,9 @@ services:
   - type: web
     name: fullstack-app
     env: python
-    buildCommand: ./start.sh
-    startCommand: python backend/app.py
+    root: src
+    buildCommand: "./start.sh"
+    startCommand: "python backend/app.py"
     envVars:
       - key: PYTHON_VERSION
         value: 3.9
