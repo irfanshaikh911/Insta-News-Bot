@@ -1,9 +1,18 @@
+# services:
+#   - type: web
+#     name: fullstack-app
+#     env: python
+#     buildCommand: "./start.sh"
+#     startCommand: "python backend/app.py"
+#     envVars:
+#       - key: PYTHON_VERSION
+#         value: 3.9
 services:
   - type: web
-    name: fullstack-app
+    name: insta-bot-app
     env: python
+    plan: free
     buildCommand: "./start.sh"
-    startCommand: "python backend/app.py"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9
+    startCommand: "./start.sh"
+    branch: main
+    runtime: python
