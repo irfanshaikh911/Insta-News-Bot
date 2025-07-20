@@ -1,29 +1,33 @@
-# === STAGE 1: Build React frontend ===
-FROM node:18 AS frontend
-
-WORKDIR /app
-COPY frontend/ ./frontend/
-WORKDIR /app/frontend
-RUN npm install && npm run build
-
-# === STAGE 2: Backend with frontend static files ===
+# Use official Python image
 FROM python:3.10-slim
 
-# Set working directory
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libsndfile1 \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory
 WORKDIR /app
 
-# Copy backend code
-COPY backend/ ./backend/
-
-# Copy frontend build from previous stage
-COPY --from=frontend /app/frontend/build ./frontend/build
+# Copy files
+COPY . .
 
 # Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Expose the port
+# Download punkt for newspaper3k
+RUN python -m nltk.downloader punkt
+
+# Expose port (optional if using Flask default)
 EXPOSE 5000
 
-# Start the Flask app
-CMD ["gunicorn", "backend.app:app", "-b", "0.0.0.0:5000"]
+# Entry point
+CMD ["./start.sh"]
