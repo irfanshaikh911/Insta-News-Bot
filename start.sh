@@ -19,3 +19,5 @@ pip install -r requirements.txt
 echo "🌐 Starting the application..."
 python app.py
 
+echo "✅ Reached end of start.sh"
+
