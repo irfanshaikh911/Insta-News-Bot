@@ -12,4 +12,10 @@ npm run build
 
 echo "🚀 Launching backend..."
 cd ../backend
-gunicorn app:app --bind 0.0.0.0:$PORT
+
+echo "📦 Installing Python dependencies..."
+pip install -r requirements.txt
+
+echo "🌐 Starting the application..."
+python app.py
+
