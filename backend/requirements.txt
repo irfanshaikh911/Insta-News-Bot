@@ -1,0 +1,21 @@
+requests
+instabot
+Beautifulsoup4
+pandas
+transformers
+html2image
+sumy
+feedparser
+newspaper3k
+tqdm
+lxml_html_clean
+Flask
+python-dotenv
+requests
+flask_cors
+tweepy
+Flask
+gunicorn
+# sentencepiece
+# tensorflow
+# torch==2.2.2
