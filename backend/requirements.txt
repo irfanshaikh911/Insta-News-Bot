@@ -13,18 +13,19 @@ tqdm==4.66.4
 beautifulsoup4==4.12.3
 
 # HuggingFace Transformers (text summarization, etc.)
-transformers==4.41.2
-torch==2.3.0
-sentencepiece==0.2.0
-accelerate==0.31.0
+transformers
+torch
+sentencepiece
+accelerate
 
 # Instagram automation
-instagrapi==1.17.3
+instagrapi
 
 # Audio and numpy processing
-soundfile==0.12.1
-numpy==1.26.4
+soundfile
+numpy
 
 # Optional but useful
-pandas==2.2.2
-ujson==5.9.0
+pandas
+numpy
+ujson
