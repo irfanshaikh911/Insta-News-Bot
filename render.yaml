@@ -1,18 +1,11 @@
-# services:
-#   - type: web
-#     name: fullstack-app
-#     env: python
-#     buildCommand: "./start.sh"
-#     startCommand: "python backend/app.py"
-#     envVars:
-#       - key: PYTHON_VERSION
-#         value: 3.9
 services:
   - type: web
     name: fullstack-app
-    env: python
-    buildCommand: "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
-    startCommand: "python backend/app.py"
+    env: docker
+    plan: free
+    region: oregon
+    dockerContext: .
+    dockerfilePath: Dockerfile
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9
+      - key: PORT
+        value: 5000
