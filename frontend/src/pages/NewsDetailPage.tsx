@@ -3,9 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import Papa from "papaparse";
 import Navbar from "../components/Navbar";
 import SocialMediaPreview from "../components/SocialMediaPreview";
-import toast, { Toaster } from "react-hot-toast";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { ImSpinner2 } from "react-icons/im";
+import { Toaster, toast } from "react-hot-toast";
 
 interface NewsItem {
   title: string;
@@ -16,6 +16,8 @@ interface NewsItem {
   category: string;
   full_story: string;
 }
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const NewsDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,23 +55,28 @@ const NewsDetailPage: React.FC = () => {
 
   const sendEmail = async () => {
     if (!validateEmail(email)) return toast.error("Invalid email address");
+    if (!newsItem) return;
 
     setSending(true);
-    const res = await fetch("/post", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: email,
-        subject: newsItem?.title,
-        body: `${newsItem?.summary}\n\nRead full: ${newsItem?.url}`,
-        link: newsItem?.url,
-        image: newsItem?.image,
-      }),
-    });
-
-    const data = await res.json();
-    setSending(false);
-    data.success ? toast.success("📧 Email sent!") : toast.error("Email failed: " + data.error);
+    try {
+      const res = await fetch(`${BACKEND_URL}/post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          subject: newsItem.title,
+          body: `${newsItem.summary}\n\nRead full: ${newsItem.url}`,
+          link: newsItem.url,
+          image: newsItem.image,
+        }),
+      });
+      const data = await res.json();
+      setSending(false);
+      data.success ? toast.success("📧 Email sent!") : toast.error("Email failed: " + data.error);
+    } catch (err: any) {
+      setSending(false);
+      toast.error("Network error: " + err.message);
+    }
   };
 
   const handlePostNow = async () => {
@@ -77,7 +84,7 @@ const NewsDetailPage: React.FC = () => {
 
     setPosting(true);
     try {
-      const response = await fetch("/post", {
+      const response = await fetch(`${BACKEND_URL}/post`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,9 +108,9 @@ const NewsDetailPage: React.FC = () => {
       } else {
         toast.error("❌ " + result.error);
       }
-    } catch (err) {
+    } catch (err: any) {
       setPosting(false);
-      toast.error("❌ Post failed: " + (err as any).message);
+      toast.error("❌ Post failed: " + err.message);
     }
   };
 
@@ -111,25 +118,32 @@ const NewsDetailPage: React.FC = () => {
     if (!codeInput) return;
 
     setSubmittingCode(true);
-    const response = await fetch("/submit-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: codeInput }),
-    });
+    try {
+      const response = await fetch(`${BACKEND_URL}/submit-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput }),
+      });
 
-    const result = await response.json();
-    setSubmittingCode(false);
+      const result = await response.json();
+      setSubmittingCode(false);
 
-    if (result.success) {
-      toast.success("✅ Verification successful! Click 'Post Now' again.");
-      setChallengeRequired(false);
-      setCodeInput("");
-    } else {
-      toast.error("❌ Code failed: " + result.error);
+      if (result.success) {
+        toast.success("✅ Verification successful! Click 'Post Now' again.");
+        setChallengeRequired(false);
+        setCodeInput("");
+      } else {
+        toast.error("❌ Code failed: " + result.error);
+      }
+    } catch (err: any) {
+      setSubmittingCode(false);
+      toast.error("Network error: " + err.message);
     }
   };
 
   const handleListen = async () => {
+    if (!newsItem) return;
+
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -137,19 +151,24 @@ const NewsDetailPage: React.FC = () => {
       return;
     }
 
-    const res = await fetch("/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newsItem?.full_story || newsItem?.summary }),
-    });
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    try {
+      const res = await fetch(`${BACKEND_URL}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newsItem.full_story || newsItem.summary }),
+      });
 
-    if (!audioRef.current) audioRef.current = new Audio();
-    audioRef.current.src = url;
-    audioRef.current.play();
-    setIsPlaying(true);
-    audioRef.current.onended = () => setIsPlaying(false);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (!audioRef.current) audioRef.current = new Audio();
+      audioRef.current.src = url;
+      audioRef.current.play();
+      setIsPlaying(true);
+      audioRef.current.onended = () => setIsPlaying(false);
+    } catch (err) {
+      toast.error("Failed to fetch audio");
+    }
   };
 
   const generateSummary = (text: string) => {

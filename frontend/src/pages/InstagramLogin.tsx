@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import logo from "../assets/our-logo.jpg"; // Update to your actual logo
 
-// ✅ Props from App.tsx
 interface InstagramLoginProps {
   setIsLoggedIn: (val: boolean) => void;
 }
@@ -24,19 +23,18 @@ const InstagramLogin: React.FC<InstagramLoginProps> = ({ setIsLoggedIn }) => {
       return;
     }
 
-    // Show confirmation modal
     setShowSavePrompt(true);
   };
 
   const handleSaveLogin = async () => {
     try {
-      await axios.post("http://localhost:5000/save-instagram-login", {
+      await axios.post("https://insta-news-bot-1.onrender.com/save-instagram-login", {
         username,
         password,
       });
 
-      setIsLoggedIn(true); // Tell parent we're logged in
-      navigate("/");        // Redirect to homepage
+      setIsLoggedIn(true);
+      navigate("/");
     } catch (err) {
       setError("❌ Failed to save login info.");
     }
@@ -53,6 +51,14 @@ const InstagramLogin: React.FC<InstagramLoginProps> = ({ setIsLoggedIn }) => {
             className="h-20 w-auto rounded-lg shadow-md"
           />
         </div>
+
+        {/* Back to Home */}
+        <button
+          onClick={() => navigate("/")}
+          className="text-sm text-purple-600 underline hover:text-purple-800 transition mb-4"
+        >
+          ← Back to Home
+        </button>
 
         {/* Heading */}
         <h2 className="text-3xl font-bold text-purple-700">Login to InstaBot</h2>

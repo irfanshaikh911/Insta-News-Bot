@@ -17,7 +17,7 @@ const Dashboard: React.FC = () => {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
 
   useEffect(() => {
-    fetch("http://localhost:5000/posted")
+    fetch("https://insta-news-bot-1.onrender.com/")
       .then((res) => res.json())
       .then((data) => {
         const reversed = data.reverse();
@@ -34,14 +34,14 @@ const Dashboard: React.FC = () => {
 
   const handleDelete = async (index: number) => {
     if (!window.confirm("Delete this post log?")) return;
-    await fetch(`http://localhost:5000/posted/${index}`, { method: "DELETE" });
+    await fetch(`https://insta-news-bot-1.onrender.com/posted/${index}`, { method: "DELETE" });
     window.location.reload();
   };
 
   const handleEdit = async (index: number) => {
     const newTitle = prompt("Edit title:", posts[index].title);
     if (!newTitle) return;
-    await fetch(`http://localhost:5000/posted/${index}`, {
+    await fetch(`https://insta-news-bot-1.onrender.com/posted/${index}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
