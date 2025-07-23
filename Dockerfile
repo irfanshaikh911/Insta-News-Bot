@@ -6,7 +6,8 @@ WORKDIR /app/frontend
 
 # Install dependencies & build only
 COPY frontend/package*.json ./
-RUN npm ci --omit=dev
+# RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy all source and build
 COPY frontend/ .
