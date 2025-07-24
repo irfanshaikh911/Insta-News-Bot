@@ -14,9 +14,9 @@ beautifulsoup4==4.12.3
 
 # HuggingFace Transformers (text summarization, etc.)
 transformers
-torch
-sentencepiece
-accelerate
+#torch
+#sentencepiece
+#accelerate
 
 # Instagram automation
 instagrapi
