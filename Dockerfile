@@ -1,44 +1,55 @@
 # ------------------- Frontend Stage -------------------
 FROM node:18-slim AS frontend
 
-WORKDIR /app
+# Set working directory
+WORKDIR /app/frontend
 
-# Install only production dependencies
+# Install dependencies & build only
 COPY frontend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
-# Copy source and build
+# Copy all source and build
 COPY frontend/ .
 RUN npm run build
+
+# Remove node_modules to save space
+RUN rm -rf node_modules
 
 
 # ------------------- Backend Stage -------------------
 FROM python:3.11-slim AS backend
 
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Set workdir
+WORKDIR /app/backend
 
-# Copy backend requirements and install dependencies
+# Install Python deps first
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source
+# Copy backend source code
 COPY backend/ .
 
-# Copy built frontend assets
-COPY --from=frontend /app/dist ./static
+# Copy built frontend from previous stage
+COPY --from=frontend /app/frontend/dist ./static
 
-# Copy start.sh (from root)
-COPY start.sh ./start.sh
+# ✅ Copy start.sh from root directory to backend working dir
+COPY start.sh /app/backend/start.sh
+
+# Make sure start.sh is executable
 RUN chmod +x start.sh
 
+# Expose port (if needed by platform)
 EXPOSE 5000
 
+# Launch the app
 CMD ["bash", "start.sh"]
