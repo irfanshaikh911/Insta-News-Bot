@@ -23,23 +23,25 @@ RUN apt-get update && apt-get install -y \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# ✅ Set root project directory as workdir
+# Set root workdir
 WORKDIR /app
 
-# ✅ Copy everything from project root
-COPY . .
-
-# ✅ Install Python dependencies
+# Install backend Python dependencies
+COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# ✅ Copy built frontend from previous stage to backend/static
-RUN mkdir -p backend/static 
+# Copy backend source code
+COPY backend/ ./backend
+
+# Copy built frontend files
+RUN mkdir -p backend/static
 COPY --from=frontend /app/frontend/dist/ ./backend/static
 
-# ✅ Make sure start.sh is executable
-RUN chmod +x start.sh
+# Copy start.sh to root
+COPY start.sh .
 
+# Expose port if needed
 EXPOSE 5000
 
-# ✅ Start the app using script in root
+# Start the app
 CMD ["bash", "start.sh"]
