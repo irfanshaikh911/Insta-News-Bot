@@ -34,7 +34,7 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # ✅ Copy built frontend from previous stage to backend/static
 RUN mkdir -p backend/static && \
-    cp -r frontend/dist/* backend/static/
+    COPY --from=frontend /app/frontend/dist/ ./backend/static
 
 # ✅ Make sure start.sh is executable
 RUN chmod +x start.sh
