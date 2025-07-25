@@ -21,6 +21,9 @@ torch
 # Instagram automation
 instagrapi
 
+gunicorn
+
+
 # Audio and numpy processing
 soundfile
 numpy
