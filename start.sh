@@ -1,12 +1,12 @@
 #!/bin/bash
-set -e
 
-echo "🚀 Launching backend..."
-
+echo "🌐 Starting the Flask backend..."
 cd backend
-
-echo "📦 Installing Python dependencies..."
 pip install -r requirements.txt
+python app.py &
 
-echo "🌐 Starting the application..."
-exec gunicorn -b 0.0.0.0:5000 app:app
+echo "🌐 Starting the React frontend..."
+cd ../frontend
+npm install
+npm run build
+npx serve -s build -l 3000
