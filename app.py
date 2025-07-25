@@ -1,40 +1,38 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from insta_bot import post_to_instagram, submit_challenge_code
 from ai_tools import generate_summary, generate_hashtags
 # from text_to_speech import synthesize_speech
-import io
 import os, json, requests
 from datetime import datetime
 from dotenv import load_dotenv, set_key
 
-app = Flask(__name__, static_folder='../frontend/dist', static_url_path="/")
+# Load environment variables
+load_dotenv()
+
+# Initialize Flask app
+app = Flask(__name__, static_folder="static", static_url_path="/")
 CORS(app)
 
 POSTED_FILE = "posted.json"
 ENV_PATH = '.env'
-
-load_dotenv()
 ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 
-@app.route('/')
-def serve_root():
-    return send_from_directory(app.static_folder, 'index.html')
+# ------------------- Static Frontend -------------------
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, "index.html")
 
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory(app.static_folder, path)
-
+# ------------------- API Endpoints -------------------
 @app.route("/save-instagram-login", methods=["POST"])
 def save_instagram_login():
     data = request.get_json()
-
-    if not data:
-        return jsonify({'error': 'No JSON received'}), 400
-
-    username = data.get('username')
-    password = data.get('password')
+    username = data.get("username")
+    password = data.get("password")
 
     if not username or not password:
         return jsonify({'error': 'Username and password required'}), 400
@@ -44,8 +42,7 @@ def save_instagram_login():
         set_key(ENV_PATH, 'INSTA_PASSWORD', password)
         return jsonify({'message': 'Login info saved'}), 200
     except Exception as e:
-        print("Error saving to .env:", e)
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': str(e)}), 500
 
 def log_post(title, summary, image, url, platform="instagram", status="Posted"):
     entry = {
@@ -83,16 +80,12 @@ def post_now():
 
         improved_summary = generate_summary(full_story or summary)
         hashtags = generate_hashtags(full_story or summary)
-        hashtag_str = " ".join(hashtags)
-        caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{hashtag_str}"
+        caption = f"{title}\n\n{improved_summary}\n\nRead more: {url}\n\n{' '.join(hashtags)}"
 
         result = post_to_instagram(caption, image)
-        status = "Posted" if result else "Failed"
-        log_post(title, improved_summary, image, url, platform="instagram", status=status)
-        
+        log_post(title, improved_summary, image, url, status="Posted" if result else "Failed")
 
         return jsonify({"success": result, "caption": caption, "hashtags": hashtags}), 200
-
     except Exception as e:
         if "challenge_required" in str(e).lower():
             return jsonify({"success": False, "challenge_required": True, "error": str(e)})
@@ -106,7 +99,7 @@ def send_email():
         subject = data.get("subject")
         body = data.get("body")
 
-        if not to or not subject or not body:
+        if not all([to, subject, body]):
             return jsonify({"success": False, "error": "Missing email fields"}), 400
 
         payload = {
@@ -120,12 +113,11 @@ def send_email():
 
         r = requests.post("https://api.elasticemail.com/v2/email/send", data=payload)
         response_data = r.json()
+
         if r.status_code == 200 and response_data.get("success"):
             return jsonify({"success": True})
         else:
-            error_msg = response_data.get("message", r.text)
-            return jsonify({"success": False, "error": error_msg}), 500
-
+            return jsonify({"success": False, "error": response_data.get("message", r.text)}), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -136,7 +128,7 @@ def send_sms():
         to = data.get("to")
         message = data.get("message")
 
-        if not to or not message:
+        if not all([to, message]):
             return jsonify({"success": False, "error": "Missing SMS fields"}), 400
 
         sms_payload = {
@@ -147,9 +139,7 @@ def send_sms():
             'numbers': to.replace("+", "")
         }
 
-        headers = {
-            'cache-control': "no-cache"
-        }
+        headers = {'cache-control': "no-cache"}
 
         r = requests.post("https://www.fast2sms.com/dev/bulkV2", data=sms_payload, headers=headers)
         response_data = r.json()
@@ -158,21 +148,18 @@ def send_sms():
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "error": response_data.get("message", "Unknown error")}), 500
-
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/submit-code", methods=["POST"])
 def handle_challenge_code():
     try:
-        data = request.get_json()
-        code = data.get("code")
+        code = request.get_json().get("code")
         if not code:
             return jsonify({"success": False, "error": "Code is required"}), 400
 
         submit_challenge_code(code)
         return jsonify({"success": True})
-
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -214,15 +201,7 @@ def edit_post(index):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Serve React frontend
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
-
+# ------------------- Main Entry -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
